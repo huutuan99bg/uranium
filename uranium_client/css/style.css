@@ -1,0 +1,42 @@
+.expop {
+    display: none !important;
+}
+
+#cs-recaptcha-control {
+    position: fixed;
+    z-index: 999999999999999;
+    top: 0;
+    left: 0;
+}
+
+#cs-solve-recaptcha {
+    border: none;
+    padding: 12px 20px;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0px 0px 10px #a2a2a2;
+}
+#cs-solve-recaptcha[status="not_yet"]{
+    background: #01a3f9;
+}
+#cs-solve-recaptcha[status="not_yet"]:hover {
+    background: #01a3f9;
+}
+#cs-solve-recaptcha[status="processing"]{
+    background: #ffba2a;
+}
+#cs-solve-recaptcha[status="processing"]:hover {
+    background: #ffba2a;
+}
+#cs-solve-recaptcha[status="success"]{
+    background: #42da19;
+}
+#cs-solve-recaptcha[status="success"]:hover {
+    background: #42da19;
+}
+#cs-solve-recaptcha[status="error"]{
+    background: #ff4444;
+}
+#cs-solve-recaptcha[status="error"]:hover {
+    background: #ff4444;
+}
