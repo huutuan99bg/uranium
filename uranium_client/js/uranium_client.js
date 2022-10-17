@@ -277,7 +277,6 @@ const commandUploadFile = async (method, params, target_tab_id) => {
         }
         let file_path = params.path;
         let file_base64 = await fileUrlToBase64('http://127.0.0.1:' + server_port + '/uranium-load-file?path=' + file_path);
-        console.log(file_base64)
         params.file_base64 = file_base64;
         return await clientRequest(target_tab_id, method, params, target)
     } catch (err) {
@@ -467,7 +466,6 @@ const updateTabsTargetFrame = async () => {
 }
 
 chrome.tabs.onUpdated.addListener((id, changeInfo, tab) => {
-    console.log(changeInfo)
     try {
         if (id == selected_tab_id && changeInfo.status == 'loading' && uranium_target != null) {
             updateTabsTargetFrame();

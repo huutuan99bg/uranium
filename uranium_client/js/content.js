@@ -6,7 +6,6 @@ try {
 
 if (isMainWindow) {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        console.log(request)
         if (request && request.type === "uranium_request") {
             if (request.target == null) {
                 clientHandlers(request, false)
@@ -22,7 +21,6 @@ if (isMainWindow) {
     window.addEventListener('message', function (request) {
         if (request.data && request.data.type === "uranium_frame_request") {
             clientHandlers(request.data, true)
-            console.log(request)
         }
     });
 }
@@ -51,14 +49,12 @@ const clientHandlers = async (request, inside_frame) => {
     let response_data = null;
     request_data = {}
     if (inside_frame == true) {
-        console.log(request)
         request_data = request.data;
         request_data.csid = request.csid;
     } else {
         request_data = request;
     }
     try {
-        // console.log(request.method);
         switch (request_data.method) {
             case 'get_local_storage':
                 response_data = { ...localStorage };
@@ -83,7 +79,6 @@ const clientHandlers = async (request, inside_frame) => {
                 response_data = true;
                 break;
             case 'upload_file':
-                console.log(request_data.params)
                 let file = base64ToFile(request_data.params.file_base64.file, request_data.params.file_base64.filename)
                 document.querySelector(request_data.params.element.fullpath).uraniumUpload(file)
                 response_data = true;
@@ -172,7 +167,7 @@ const clientHandlers = async (request, inside_frame) => {
             }
         }
     } catch (err) {
-        console.log(err)
+        console.error(err)
         response_data = null;
     }
 

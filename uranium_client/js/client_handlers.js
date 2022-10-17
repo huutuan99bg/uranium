@@ -83,7 +83,7 @@ const waitMethodSuccess = async (method, timeout, frequency = 100) => {
                 resolve(result)
             }, timeout, frequency)
         } catch (e) {
-            console.log(e)
+            console.error(e)
             reject(false);
         }
     });
@@ -144,7 +144,7 @@ const frameResponse = csid => {
                 }
             })
         } catch (e) {
-            console.log(e)
+            console.error(e)
             reject(false);
         }
     });
@@ -161,7 +161,7 @@ const frameRequest = async (frame, data) => {
         frame.contentWindow.postMessage(frame_request_data, '*')
         return await frameResponse(csid);
     } catch (err) {
-        console.log(err);
+        console.error(err);
         return false
     }
 }
