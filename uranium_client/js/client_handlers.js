@@ -101,11 +101,22 @@ Element.prototype.uraniumSendKeys = function sendKeys(text, replace = false) {
     }
 }
 
-Element.prototype.uraniumSelect = function sendKeys(value,) {
+Element.prototype.uraniumSelect = function uraniumSelect(value,) {
     try {
-        let option = this.querySelector('option[value="'+value+'"]');
+        let option = this.querySelector('option[value="' + value + '"]');
         option.selected = true;
         option.dispatchEvent(new Event('change', { bubbles: true }));
+    } catch (e) {
+        return null;
+    }
+}
+
+Element.prototype.uraniumUpload = function uraniumUpload(file) {
+    try {
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        this.files = dataTransfer.files;
+        this.dispatchEvent(new Event('change', { bubbles: true }));
     } catch (e) {
         return null;
     }
@@ -153,4 +164,16 @@ const frameRequest = async (frame, data) => {
         console.log(err);
         return false
     }
+}
+
+function base64ToFile(data, filename) {
+    var arr = data.split(','),
+        mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]),
+        n = bstr.length,
+        u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
 }

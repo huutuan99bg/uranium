@@ -26,7 +26,6 @@ chrome.management.getAll(extensions => {
     });
     // stylesheet, script, image, font, object, xmlhttprequest, ping, csp_report, media
     socket.on("quit", async data => {
-        console.log('quit event');
         await closeBrowser();
     })
     socket.on("command", uraniumCommandCallback);
@@ -131,7 +130,6 @@ const uraniumCommandCallback = async data => {
                 response_data = await commandBookmarkHandle(method, params)
                 break;
             case 'create_tab':
-                // console.log(params.new_tab)
                 if (remote_tabs.length == 0 && params.new_tab !== true) {
                     remote_tabs.push({ tab_id: selected_tab_id, uranium_target: null })
                     response_data = selected_tab_id;
@@ -175,7 +173,9 @@ const uraniumCommandCallback = async data => {
                     chrome.tabs.update(selected_tab_id, { selected: true });
                 }
                 break;
-
+            case 'upload_file':
+                response_data = await commandUploadFile(method, params, target_tab_id);
+                break;
             /* Browser data */
 
             case 'get_cookies':
@@ -269,7 +269,23 @@ const commandCreateTabHandle = async (params) => {
     })
 
 }
+const commandUploadFile = async (method, params, target_tab_id) => {
+    try {
+        let target = uranium_target
+        if (target_tab_id != selected_tab_id) {
+            target = remoteUraniumTarget(target_tab_id)
+        }
+        let file_path = params.path;
+        let file_base64 = await fileUrlToBase64('http://127.0.0.1:' + server_port + '/uranium-load-file?path=' + file_path);
+        console.log(file_base64)
+        params.file_base64 = file_base64;
+        return await clientRequest(target_tab_id, method, params, target)
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 
+}
 const commandContentScript = async (method, params, target_tab_id) => {
     let target = uranium_target
     if (target_tab_id != selected_tab_id) {
@@ -374,14 +390,14 @@ const commandWindowHandle = async (method, params) => {
                 case 'maximize_window':
                     chrome.windows.getCurrent({},
                         (w) => {
-                            chrome.windows.update(w.id, {state: "maximized"}, () => { resolve(true) });
+                            chrome.windows.update(w.id, { state: "maximized" }, () => { resolve(true) });
                         }
                     )
                     break;
                 case 'minimize_window':
                     chrome.windows.getCurrent({},
                         (w) => {
-                            chrome.windows.update(w.id, {state: "minimized"}, () => { resolve(true) });
+                            chrome.windows.update(w.id, { state: "minimized" }, () => { resolve(true) });
                         }
                     )
                     break;
@@ -443,11 +459,18 @@ const hasUraniumTag = (tab_id) => {
     }
 }
 
+const updateTabsTargetFrame = async () => {
+    result = await clientRequest(selected_tab_id, 'get_element_by_xpath', { xpath: uranium_target.fullpath }, null)
+    if (result == null) {
+        // uranium_target = null;  
+    }
+}
+
 chrome.tabs.onUpdated.addListener((id, changeInfo, tab) => {
-    // console.log(changeInfo)
+    console.log(changeInfo)
     try {
-        if (id == selected_tab_id && changeInfo.status == 'loading') {
-            uranium_target = null;
+        if (id == selected_tab_id && changeInfo.status == 'loading' && uranium_target != null) {
+            updateTabsTargetFrame();
         }
         if (isRemoteTab(id) && changeInfo.status == 'loading') {
             remoteUpdateUraniumTarget(id, null)
@@ -463,9 +486,8 @@ chrome.tabs.onUpdated.addListener((id, changeInfo, tab) => {
                     }, (result) => { })
                 }
             }
-
         }
-    } catch (err) { console.log(err) }
+    } catch (err) { console.error(err) }
     return true
 });
 chrome.tabs.onCreated.addListener(async tab => {
@@ -483,3 +505,4 @@ chrome.tabs.onCreated.addListener(async tab => {
         }
     } catch (e) { console.error(e) }
 })
+

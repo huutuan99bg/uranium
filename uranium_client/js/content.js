@@ -6,8 +6,9 @@ try {
 
 if (isMainWindow) {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        console.log(request)
         if (request && request.type === "uranium_request") {
-            if (request.uranium_target == null) {
+            if (request.target == null) {
                 clientHandlers(request, false)
             } else {
                 frameHandlers(request);
@@ -21,12 +22,13 @@ if (isMainWindow) {
     window.addEventListener('message', function (request) {
         if (request.data && request.data.type === "uranium_frame_request") {
             clientHandlers(request.data, true)
+            console.log(request)
         }
     });
 }
 
 const frameHandlers = async (request) => {
-    let uranium_target = request.uranium_target;
+    let uranium_target = request.target;
     let frame = document.querySelector(uranium_target.fullpath);
     switch (request.method) {
         case 'url':
@@ -45,9 +47,11 @@ const frameHandlers = async (request) => {
 
 
 const clientHandlers = async (request, inside_frame) => {
+    
     let response_data = null;
     request_data = {}
     if (inside_frame == true) {
+        console.log(request)
         request_data = request.data;
         request_data.csid = request.csid;
     } else {
@@ -76,6 +80,12 @@ const clientHandlers = async (request, inside_frame) => {
                 break;
             case 'select_option':
                 document.querySelector(request_data.params.element.fullpath).uraniumSelect(request_data.params.value)
+                response_data = true;
+                break;
+            case 'upload_file':
+                console.log(request_data.params)
+                let file = base64ToFile(request_data.params.file_base64.file, request_data.params.file_base64.filename)
+                document.querySelector(request_data.params.element.fullpath).uraniumUpload(file)
                 response_data = true;
                 break;
             case 'title':

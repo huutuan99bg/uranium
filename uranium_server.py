@@ -9,7 +9,7 @@ import nest_asyncio
 import socketio
 import asyncio
 from contextlib import closing
-from aiohttp import web
+from aiohttp import web, streamer
 from threading import Thread
 from asyncio import Future
 import shutil
@@ -178,6 +178,30 @@ async def wait_client(request):
     except Exception as e:
         return web.json_response({'status': False, 'message': 'Error command'})
 
+@streamer
+async def file_sender(writer, file_path=None):
+    with open(file_path, 'rb') as f:
+        chunk = f.read(2 ** 16)
+        while chunk:
+            await writer.write(chunk)
+            chunk = f.read(2 ** 16)
+
+@routes.get('/uranium-load-file')
+async def uranium_load_file(request):
+    try:
+        path = request.rel_url.query['path']+r''
+        if not os.path.exists(path):
+            return False
+        filename = os.path.basename(path)
+        headers = {
+            "Content-disposition": "attachment; filename={file_name}".format(file_name=filename),
+        }
+        return web.Response(
+            body=file_sender(file_path=path),headers=headers
+        )
+    except Exception as e:
+        print(e)
+        return web.json_response({'status': False, 'message': 'Error command'})
 
 @sio.event
 async def register(sid, data):
@@ -223,6 +247,8 @@ async def disconnect(sid):
 async def index(request):
     return web.json_response({'status': True, 'message': 'Api working'})
 
+
+
 app.router.add_get('/', index)
 app.add_routes(routes)
 nest_asyncio.apply()
@@ -240,4 +266,3 @@ def get_free_port():
 
 
 server_task(sys.argv[1])
-# server_task(12321)

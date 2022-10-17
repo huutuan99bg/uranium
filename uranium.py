@@ -27,8 +27,8 @@ SERVER_PORT = get_free_port()
 server_path = join(curdir, 'uranium_server.py')
 cmd = 'python '+server_path+' '+str(SERVER_PORT)
 server_process = subprocess.Popen(cmd, shell=True)
-# print('Server pid: '+str(server_process.pid))
-# print('Uranium server port: '+str(SERVER_PORT))
+print('Server pid: '+str(server_process.pid))
+print('Uranium server port: '+str(SERVER_PORT))
 
 
 """ ================================================================= """
@@ -51,9 +51,7 @@ class WebElement():
 
     @property
     def text(self):
-        """ 
-            Get text of the element
-        """
+        """The text of the element."""
         try:
             return self.element['text']
         except:
@@ -61,9 +59,7 @@ class WebElement():
 
     @property
     def html(self):
-        """ 
-            Get html content of the element
-        """
+        """The html content of the element."""
         try:
             return self.element['html']
         except:
@@ -71,9 +67,6 @@ class WebElement():
 
     @property
     def value(self):
-        """ 
-            Get value of the element
-        """
         try:
             return self.element['value']
         except:
@@ -81,9 +74,6 @@ class WebElement():
 
     @property
     def is_enabled(self):
-        """ 
-            Check if the element is enabled
-        """
         try:
             return self.element['is_enabled']
         except:
@@ -91,9 +81,8 @@ class WebElement():
 
     def get_attribute(self, attribute_name):
         """
-            Get attribute of the element
-            Args:
-                - attribute_name - Name of the attribute/property to retrieve.
+        Args:
+            - name - Name of the attribute/property to retrieve.
         """
         try:
             return self.element['attributes'][attribute_name]
@@ -101,11 +90,6 @@ class WebElement():
             return None
 
     def click(self, timeout=60):
-        """ 
-            Click the element
-            Args: 
-                timeout: int - the command timeout
-        """
         try:
             response = self.command({
                 'method': 'click',
@@ -117,13 +101,6 @@ class WebElement():
             return False
 
     def send_keys(self, text, timeout=60, replace=False):
-        """ 
-            Send keys to the element (input, textarea)
-            Args: 
-                text: string - the text to input
-                timeout: int - the command timeout
-                replace: boolean - option to replace the input
-        """
         try:
             response = self.command({
                 'method': 'send_keys',
@@ -140,18 +117,27 @@ class WebElement():
             return False
 
     def select_option(self, value, timeout=60):
-        """ 
-            Select option the select tag
-            Args: 
-                value: string - value of option to select
-                timeout: int - the command timeout
-        """
         try:
             response = self.command({
                 'method': 'select_option',
                 'params': {
                     'element': self.element,
                     'value': value,
+                    'tab_id': self.tab_id
+                },
+                'timeout': timeout
+            })
+            return response['data']
+        except:
+            return False
+
+    def upload_file(self, path, timeout=60):
+        try:
+            response = self.command({
+                'method': 'upload_file',
+                'params': {
+                    'element': self.element,
+                    'path': path,
                     'tab_id': self.tab_id
                 },
                 'timeout': timeout
@@ -171,9 +157,6 @@ class SwitchTo:
         self.command = command
 
     def default_content(self):
-        """ 
-            Switch focus to the default frame
-        """
         try:
             response = self.command({
                 'method': 'switch_to_default_content',
@@ -184,11 +167,6 @@ class SwitchTo:
             return False
 
     def frame(self, frame):
-        """ 
-            Switch focus to the special frame
-            Args:
-                frame: WebElement - frame to switch focus
-        """
         try:
             response = self.command({
                 'method': 'switch_to_frame',
@@ -200,11 +178,6 @@ class SwitchTo:
             return False
 
     def window(self, window):
-        """ 
-            Switch to the special window handle
-            Args:
-                window: dict - window to switch focus
-        """
         try:
             response = self.command({
                 'method': 'switch_to_window',
@@ -332,6 +305,7 @@ class Driver:
 
     def wait_client(self):
         try:
+
             data = {
                 'target': self.client_id,
                 'timeout': 3
@@ -537,7 +511,7 @@ class Driver:
                 'tab_id': self.tab_id,
             },
         }, timeout=timeout)
-        if response == None or len(response['data']) < 1:
+        if response == None or response.get('data') < 1:
             return None
         element = WebElement(response['data'], self.command, self.tab_id)
         return element.click()
@@ -987,6 +961,7 @@ class Uranium(Driver):
         })
 
     def launch(self):
+        # sio.emit('driver_register', {'client_id': self.client_id})
         self.update_driver_on_server()
         if self.options.execute_path == None:
             if self.options.binary_auto == True:
@@ -1005,6 +980,7 @@ class Uranium(Driver):
 
         self.execute_command = '"'+self.execute_path + '" --disable-features=ChromeWhatsNewUI --disable-background-networking --disable-backgrounding-occluded-windows --disable-default-apps --disable-popup-blocking --disable-sync --disable-prompt-on-repost --cancel-first-run --lang=en-US --password-store=basic '
         if self.options.profile_path is not None:
+            # print(self.options.profile_path)
             self.execute_command += '--user-data-dir="'+(r''+self.options.profile_path)+'" '
         else:
             print('Profile path is required!')
@@ -1027,10 +1003,11 @@ class Uranium(Driver):
         if type(self.options.chrome_args) == list and len(self.options.chrome_args) > 0:
             for arg in self.options.chrome_args:
                 self.execute_command += (arg)+' '
-        os.popen(self.execute_command)
+        client = os.popen(self.execute_command)
 
     def __exit__(self, *args):
         self.quit()
 
     def __str__(self):
         return '<Uranium object - status: '+str(self.status)+'>'
+

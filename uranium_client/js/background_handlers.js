@@ -4,7 +4,6 @@ var selected_tab_id = null;
 chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
     if (selected_tab_id == null) {
         selected_tab_id = tabs[0].id;
-        console.log(selected_tab_id)
     }
 });
 
@@ -56,7 +55,7 @@ const closeCurrent = async (target_tab_id) => {
                         selected_tab_id = tabs[0].id;
                         resolve(selected_tab_id)
                     });
-                }else{
+                } else {
                     resolve(true)
                 }
             });
@@ -212,7 +211,7 @@ const clearBrowserData = async (since = 'hour') => {
         "localStorage": true,
         "serviceWorkers": true,
         "webSQL": true
-    }, ()=>{});
+    }, () => { });
 }
 
 /* Communicate with content script */
@@ -228,19 +227,19 @@ const clientResponse = uraniumid => {
             }
             return true
         });
-    } catch (err) { console.log(err); reject(false); }
+    } catch (err) { console.error(err); reject(false); }
     return promise
 }
 
 const clientRequest = async (target_tab_id, method, params = {}, target = null) => {
     try {
         let uraniumid = csidGenerator();
-        let data = { type: "uranium_request", uraniumid, method, params, target}
+        let data = { type: "uranium_request", uraniumid, method, params, target }
         chrome.tabs.sendMessage(target_tab_id, data)
         return await clientResponse(uraniumid);
     } catch (err) {
-        console.log(err);
-        return false
+        console.error(err);
+        return null
     }
 }
 
@@ -248,14 +247,18 @@ const clientRequest = async (target_tab_id, method, params = {}, target = null) 
 const waitMethodSuccessHandler = (method, callback, timeout, frequency) => {
     var startTime = Date.now();
     (async function loopSearch() {
-        result = await method()
+        result = await method();
         if (result != null) {
             callback(result)
         }
         else {
             setTimeout(function () {
-                if (timeout && Date.now() - startTime >= timeout) { callback(result); }
-                loopSearch();
+                console.log(timeout && Date.now() - startTime)
+                if (timeout && Date.now() - startTime >= timeout - frequency) {
+                    callback(result);
+                } else {
+                    loopSearch();
+                }
             }, frequency);
         }
     })();
@@ -273,38 +276,20 @@ const waitMethodSuccess = async (method, timeout, frequency = 100) => {
     });
 }
 
-
-// chrome.management.getAll((ls) => {
-//     let ts = ls.filter(function (el) {
-//         return el.shortName.match(/uranium_config/);
-//     });
-//     console.log(ts[0].description)
-// }
-// )
-
-
-// chrome.tabs.update(selected_tab_id, {selected: true});
-
-// chrome.tabs.query({}, async function (tabs) {
-//     chrome.tabs.update(tabs[0].id, {selected: true});
-//     selected_tab_id = tabs[0].id
-// });
-
-
-
-// chrome.tabs.query({}, async function (tabs) {
-//     for (var i = 0; i < tabs.length; i++) {
-//         await chrome.tabs.remove(tabs[i].id);
-//     }
-//     window.close()
-// });
-
-// const $x = xp => {
-//     const snapshot = document.evaluate(
-//       xp, document, null,
-//       XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null
-//     );
-//     return [...Array(snapshot.snapshotLength)]
-//       .map((_, i) => snapshot.snapshotItem(i))
-//     ;
-//   };
+const fileUrlToBase64 = async url => {
+    const response = await fetch(url);
+    let  filename = 'something.jpg';
+    try{ filename = r.headers.get('Content-disposition').split(';')[1].split('=')[1];}catch(e){}
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+        try {
+            const reader = new FileReader();
+            reader.onload = function () { 
+                resolve({file:this.result, filename:filename}) 
+            };
+            reader.readAsDataURL(blob);
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
